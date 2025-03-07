@@ -1,0 +1,148 @@
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.*;
+
+class PriorityQueueNode {
+    String city;
+    int priority;
+    
+    public PriorityQueueNode(String city, int priority) {
+        this.city = city;
+        this.priority = priority;
+    }
+}
+
+class PriorityQueueComparator implements Comparator<PriorityQueueNode> {
+    public int compare(PriorityQueueNode a, PriorityQueueNode b) {
+        return Integer.compare(a.priority, b.priority);
+    }
+}
+
+class BusRoute {
+    String destination;
+    String comfortLevel;
+    int price;
+    int travelTime;
+    
+    public BusRoute(String destination, String comfortLevel, int price, int travelTime) {
+        this.destination = destination;
+        this.comfortLevel = comfortLevel;
+        this.price = price;
+        this.travelTime = travelTime;
+    }
+}
+
+public class BusRouteOptimizer {
+    private static final Map<String, List<BusRoute>> graph = new HashMap<>();
+
+    static {
+        graph.put("Coimbatore", Arrays.asList(new BusRoute("Palakkad", "High Comfort", 150, 70),
+                                              new BusRoute("Palakkad", "Low Comfort", 100, 80)));
+        graph.put("Palakkad", Arrays.asList(new BusRoute("Kochi", "High Comfort", 300, 180),
+                                            new BusRoute("Kochi", "Low Comfort", 200, 200)));
+        graph.put("Madurai", Arrays.asList(new BusRoute("Chennai", "High Comfort", 500, 390),
+                                          new BusRoute("Chennai", "Low Comfort", 400, 420),
+                                          new BusRoute("Coimbatore", "High Comfort", 350, 270),
+                                          new BusRoute("Coimbatore", "Low Comfort", 300, 290)));
+        graph.put("Chennai", Arrays.asList(new BusRoute("Bangalore", "High Comfort", 600, 360),
+                                          new BusRoute("Bangalore", "Low Comfort", 500, 390),
+                                          new BusRoute("Madurai", "High Comfort", 500, 390),
+                                          new BusRoute("Madurai", "Low Comfort", 400, 420)));
+        graph.put("Bangalore", Arrays.asList(new BusRoute("Hyderabad", "High Comfort", 700, 480),
+                                            new BusRoute("Hyderabad", "Low Comfort", 600, 520),
+                                            new BusRoute("Chennai", "High Comfort", 600, 360),
+                                            new BusRoute("Chennai", "Low Comfort", 500, 390)));
+        graph.put("Hyderabad", Arrays.asList(new BusRoute("Pune", "High Comfort", 800, 480),
+                                            new BusRoute("Pune", "Low Comfort", 700, 510)));
+        graph.put("Pune", Arrays.asList(new BusRoute("Mumbai", "High Comfort", 300, 180),
+                                       new BusRoute("Mumbai", "Low Comfort", 250, 200)));
+    }
+
+    private static Map<String, Double> getTrafficMultiplier() {
+        LocalTime now = LocalTime.now();
+        int hour = now.getHour();
+        DayOfWeek day = LocalDate.now().getDayOfWeek();
+        boolean isWeekend = (day == DayOfWeek.SATURDAY || day == DayOfWeek.SUNDAY);
+
+        if (hour >= 6 && hour < 10) return Map.of("low", 1.1, "high", 1.0);
+        if (hour >= 10 && hour < 16) return Map.of("low", 1.0, "high", 0.9);
+        if (hour >= 16 && hour < 21) return Map.of("low", 1.2, "high", 1.1);
+        return isWeekend ? Map.of("low", 1.3, "high", 1.2) : Map.of("low", 1.0, "high", 0.9);
+    }
+
+    private static Map<String, List<BusRoute>> applyTrafficConditions() {
+        Map<String, Double> trafficLevels = getTrafficMultiplier();
+        Map<String, List<BusRoute>> updatedGraph = new HashMap<>();
+
+        for (String city : graph.keySet()) {
+            List<BusRoute> routes = new ArrayList<>();
+            for (BusRoute route : graph.get(city)) {
+                String trafficType = new Random().nextBoolean() ? "low" : "high";
+                int adjustedTime = (int) (route.travelTime * trafficLevels.get(trafficType));
+                routes.add(new BusRoute(route.destination, route.comfortLevel, route.price, adjustedTime));
+            }
+            updatedGraph.put(city, routes);
+        }
+        return updatedGraph;
+    }
+
+    private static Map<String, Integer> dijkstra(String start, String destination, String comfortLevel) {
+        PriorityQueue<PriorityQueueNode> pq = new PriorityQueue<>(new PriorityQueueComparator());
+        pq.add(new PriorityQueueNode(start, 0));
+        Map<String, Integer> costSoFar = new HashMap<>();
+        costSoFar.put(start, 0);
+
+        while (!pq.isEmpty()) {
+            String current = pq.poll().city;
+            if (current.equals(destination)) break;
+
+            for (BusRoute route : graph.getOrDefault(current, new ArrayList<>())) {
+                if (!route.comfortLevel.equals(comfortLevel)) continue;
+                int newCost = costSoFar.get(current) + route.travelTime;
+                if (!costSoFar.containsKey(route.destination) || newCost < costSoFar.get(route.destination)) {
+                    costSoFar.put(route.destination, newCost);
+                    pq.add(new PriorityQueueNode(route.destination, newCost));
+                }
+            }
+        }
+        return costSoFar;
+    }
+
+    private static void findBestRoute(String start, String destination) {
+        Map<String, List<BusRoute>> updatedGraph = applyTrafficConditions();
+        
+        System.out.println("\n🚍 Best Travel Route for Each Comfort Level:");
+        for (String comfortLevel : new String[]{"High Comfort", "Low Comfort"}) {
+            Map<String, Integer> costSoFar = dijkstra(start, destination, comfortLevel);
+            if (!costSoFar.containsKey(destination)) {
+                System.out.println("\n" + comfortLevel + ": No valid route found.");
+                continue;
+            }
+            
+            int travelTime = costSoFar.get(destination);
+            int estimatedRate = comfortLevel.equals("High Comfort") 
+                                ? (int) (travelTime * 2.5)  // Higher cost for High Comfort
+                                : (int) (travelTime * 1.5); // Lower cost for Low Comfort
+
+            System.out.println("\n" + comfortLevel + ":");
+            System.out.println("   ⏳ Travel Time: " + travelTime / 60 + " hours " + travelTime % 60 + " minutes");
+            System.out.println("   💰 Estimated Rate: ₹" + estimatedRate);
+            System.out.println("   🛣 Route: " + start + " → " + destination);
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("\n📍 Available Cities: " + graph.keySet());
+        System.out.print("Enter your starting city: ");
+        String start = scanner.nextLine().trim();
+        System.out.print("Enter your destination city: ");
+        String destination = scanner.nextLine().trim();
+        if (!graph.containsKey(start) || !graph.containsKey(destination)) {
+            System.out.println("❌ Invalid city selection. Please restart and enter a valid city.");
+            return;
+        }
+        findBestRoute(start, destination);
+    }
+}
