@@ -1,0 +1,135 @@
+import datetime
+import random
+import heapq
+
+
+class City:
+    
+    def __init__(self, name):
+        self.name = name
+        self.connections = []
+        self.next_city = None
+
+
+class TransportSystem:
+
+    
+    def __init__(self):
+        self.head = None
+
+    def add_city(self, name):
+
+        city = City(name)
+        if not self.head:
+            self.head = city
+        else:
+            temp = self.head
+            while temp.next_city:
+                temp = temp.next_city
+            temp.next_city = city
+
+    def add_route(self, start, end, comfort, cost, duration):
+
+        origin = self.get_city(start)
+        destination = self.get_city(end)
+        
+        if origin:
+            origin.connections.append((end, comfort, cost, duration))
+        if destination:
+            destination.connections.append((start, comfort, cost, duration))
+
+    def get_city(self, name):
+
+        temp = self.head
+        while temp:
+            if temp.name == name:
+                return temp
+            temp = temp.next_city
+        return None
+
+    def show_cities(self):
+
+        temp = self.head
+        print("\n Cities Avalaible For Booking :")
+        while temp:
+            print(f"- {temp.name}")
+            temp = temp.next_city
+
+    def calculate_best_route(self, start, end):
+
+        now = datetime.datetime.now()
+        weekend = now.weekday() in [5, 6]
+
+        traffic_conditions = {
+            'low': 0.8 if not weekend else 1.1,
+            'moderate': 1.0 if not weekend else 1.3,
+            'high': 1.3 if not weekend else 1.6
+        }
+
+        priority_queue = []
+        heapq.heappush(priority_queue, (0, start, [], []))
+        visited = {}
+
+        while priority_queue:
+            total_duration, current, path, traffic_applied = heapq.heappop(priority_queue)
+
+            if current in visited and visited[current] <= total_duration:
+                continue
+            visited[current] = total_duration
+            path = path + [current]
+
+            if current == end:
+                return total_duration, path, traffic_applied
+
+            city = self.get_city(current)
+            if city:
+                for connection in city.connections:
+                    traffic = random.choice(list(traffic_conditions.keys()))
+                    adjusted_duration = connection[3] * traffic_conditions[traffic]
+                    heapq.heappush(priority_queue, (total_duration + adjusted_duration, connection[0], path, traffic_applied + [traffic]))
+
+        return None
+
+    def book_trip(self, start, destination):
+        best_route = self.calculate_best_route(start, destination)
+        if best_route:
+            total_time, route, traffic_info = best_route
+            print("\n Booking Successful!")
+            print("   Journey Route:")
+            for i in range(len(route) - 1):
+                print(f"   {route[i]} → {route[i + 1]} (Traffic: {traffic_info[i]})")
+            print(f"   Total Adjusted Travel Time: {int(total_time)} minutes")
+        else:
+            print("\n No route available for the selected cities.")
+
+
+def main():
+    transport = TransportSystem()
+
+
+    for city in ['Coimbatore', 'Palakkad', 'Chennai', 'Bangalore']:
+        transport.add_city(city)
+
+
+    routes = [
+        ('Coimbatore', 'Palakkad', 'Premium', 350, 90),
+        ('Palakkad', 'Chennai', 'Economy', 800, 420),
+        ('Chennai', 'Bangalore', 'Premium', 1000, 360),
+        ('Bangalore', 'Coimbatore', 'Economy', 900, 390)
+    ]
+    
+    for route in routes:
+        transport.add_route(*route)
+
+    transport.show_cities()
+
+
+    start_city = input("Enter departure city: ").strip().capitalize()
+    end_city = input("Enter destination: ").strip().capitalize()
+
+    print(f"\nSelected Route: {start_city} to {end_city}")
+
+    transport.book_trip(start_city, end_city)
+
+if __name__ == "__main__":
+    main()
