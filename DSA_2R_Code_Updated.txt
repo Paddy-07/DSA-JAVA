@@ -1,0 +1,125 @@
+import datetime
+import random
+import heapq
+
+# --- Linked List Node for Transportation Schedule ---
+class CityNode:
+    def _init_(self, name):
+        self.name = name
+        self.routes = []  # List of (destination, comfort_level, price, travel_time)
+        self.next = None  # Pointer to next city in the list
+
+# --- Linked List Class to Manage Transportation Schedule ---
+class TransportSchedule:
+    def _init_(self):
+        self.head = None
+
+    def add_city(self, name):
+        new_city = CityNode(name)
+        if not self.head:
+            self.head = new_city
+        else:
+            temp = self.head
+            while temp.next:
+                temp = temp.next
+            temp.next = new_city
+
+    def add_route(self, origin, destination, comfort_level, price, travel_time):
+        city = self.find_city(origin)
+        if city:
+            city.routes.append((destination, comfort_level, price, travel_time))
+        city = self.find_city(destination)  # Add reverse route for bidirectional travel
+        if city:
+            city.routes.append((origin, comfort_level, price, travel_time))
+
+    def find_city(self, name):
+        temp = self.head
+        while temp:
+            if temp.name == name:
+                return temp
+            temp = temp.next
+        return None
+
+    def display_schedule(self):
+        temp = self.head
+        print("\n📍 Available Cities:")
+        while temp:
+            print(f"- {temp.name}")
+            temp = temp.next
+
+    def get_best_route(self, start, destination):
+        now = datetime.datetime.now()
+        is_weekend = now.weekday() in [5, 6]  # Saturday and Sunday
+
+        traffic_levels = {
+            'low': 0.8 if not is_weekend else 1.1,
+            'moderate': 1.0 if not is_weekend else 1.3,
+            'high': 1.3 if not is_weekend else 1.6
+        }
+
+        pq = []  # Priority queue for Dijkstra's algorithm
+        heapq.heappush(pq, (0, start, []))  # (total_time, current_city, path)
+        visited = {}
+
+        while pq:
+            total_time, current_city, path = heapq.heappop(pq)
+            
+            if current_city in visited and visited[current_city] <= total_time:
+                continue
+            visited[current_city] = total_time
+            path = path + [current_city]
+            
+            if current_city == destination:
+                return total_time, path
+            
+            city = self.find_city(current_city)
+            if city:
+                for route in city.routes:
+                    traffic_condition = random.choice(list(traffic_levels.keys()))
+                    adjusted_time = route[3] * traffic_levels[traffic_condition]
+                    heapq.heappush(pq, (total_time + adjusted_time, route[0], path))
+
+        return None
+
+    def book_ticket(self, start, destination):
+        best_route = self.get_best_route(start, destination)
+        if best_route:
+            total_time, route_path = best_route
+            print("\nBooking Confirmed:")
+            print("   Route Taken:")
+            for i in range(len(route_path) - 1):
+                print(f"   {route_path[i]} → {route_path[i + 1]}")
+            print(f"   Adjusted Travel Time: {int(total_time)} minutes")
+            print("\n✅ Your bus has been booked successfully!")
+        else:
+            print("\n❌ No possible route found between these cities.")
+
+# --- Main Execution ---
+def main():
+    schedule = TransportSchedule()
+    
+    # Adding Cities
+    for city in ['Coimbatore', 'Palakkad', 'Chennai', 'Bangalore']:
+        schedule.add_city(city)
+    
+    # Adding Routes with realistic data
+    routes = [
+        ('Coimbatore', 'Palakkad', 'High Comfort', 350, 90),  # 1.5 hours
+        ('Palakkad', 'Chennai', 'Low Comfort', 800, 420),     # 7 hours
+        ('Chennai', 'Bangalore', 'High Comfort', 1000, 360),  # 6 hours
+        ('Bangalore', 'Coimbatore', 'Low Comfort', 900, 390)  # 6.5 hours
+    ]
+    for route in routes:
+        schedule.add_route(*route)
+    
+    schedule.display_schedule()
+    
+    start = input("Enter your starting city: ").strip().capitalize()
+    destination = input("Enter your destination city: ").strip().capitalize()
+    
+    print(f"\nYou selected: {start} to {destination}")
+    
+    schedule.book_ticket(start, destination)
+
+if _name_ == "_main_":
+    main()
