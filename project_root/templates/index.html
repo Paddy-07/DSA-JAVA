@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JourneyConnect - Transport Booking System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <i class="fas fa-route"></i>
+                    JourneyConnect
+                </a>
+                <div>
+                    <span id="current-date"></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="booking-container">
+            <h2>Book Your Trip</h2>
+            <p>Select your departure, destination and booking preferences below</p>
+
+            <div class="form-group">
+                <label>Available Cities</label>
+                <div class="city-list" id="city-list">
+                    <!-- Cities will be added here dynamically -->
+                </div>
+            </div>
+
+            <form id="booking-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="departure">Departure City</label>
+                        <select id="departure" name="departure" required>
+                            <option value="">Select departure city</option>
+                            <!-- Options will be added dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destination City</label>
+                        <select id="destination" name="destination" required>
+                            <option value="">Select destination city</option>
+                            <!-- Options will be added dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Select Your Priority</label>
+                    <div class="priority-options">
+                        <div class="priority-option selected" data-value="time">
+                            <i class="fas fa-clock"></i>
+                            <h3>Time</h3>
+                            <p>Fastest route available</p>
+                        </div>
+                        <div class="priority-option" data-value="cost">
+                            <i class="fas fa-coins"></i>
+                            <h3>Cost</h3>
+                            <p>Most economical option</p>
+                        </div>
+                        <div class="priority-option" data-value="comfort">
+                            <i class="fas fa-couch"></i>
+                            <h3>Comfort</h3>
+                            <p>Most comfortable journey</p>
+                        </div>
+                    </div>
+                    <input type="hidden" id="priority" name="priority" value="time">
+                </div>
+
+                <button type="submit" class="btn">Search Routes</button>
+            </form>
+        </div>
+
+        <div class="result-container" id="result-container">
+            <h2>Booking Successful</h2>
+            <div class="booking-reference" id="booking-reference">BK12345</div>
+            
+            <div>
+                <h3>Your Journey</h3>
+                <p id="journey-summary">Coimbatore to Mumbai</p>
+                <p>Optimization Priority: <span id="selected-priority">Time</span></p>
+            </div>
+
+            <div class="route-visualization">
+                <h3>Complete Route</h3>
+                <div class="route-path" id="route-path">
+                    <!-- Route visualization will be added here -->
+                </div>
+
+                <div class="segment-details" id="segment-details">
+                    <!-- Segment details will be added here -->
+                </div>
+            </div>
+
+            <div class="weather-warning" id="weather-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Weather Warning:</strong>
+                <span id="weather-info">Expect rain along parts of this route.</span>
+            </div>
+
+            <div class="trip-summary">
+                <div class="summary-item">
+                    <div class="summary-label">Total Cost</div>
+                    <div class="summary-value" id="total-cost">₹0.00</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Travel Time</div>
+                    <div class="summary-value" id="total-time">0h 0m</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Comfort Rating</div>
+                    <div class="summary-value" id="comfort-rating">3.5</div>
+                    <div class="comfort-rating" id="star-rating">
+                        <!-- Stars will be added here -->
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn" onclick="resetForm()">Book Another Trip</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
